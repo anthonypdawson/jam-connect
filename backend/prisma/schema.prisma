@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User profile and authentication
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  location           String?
+  bio                String?
+  musicalInfluences  String?
+  collaborationStyle String?
+  instruments        String?
+  createdAt          DateTime @default(now())
+  intents            ProfileIntent[]
+  connections1       Connection[] @relation("User1Connections")
+  connections2       Connection[] @relation("User2Connections")
+  feedbackGiven      ResonanceFeedback[] @relation("FeedbackGiven")
+  feedbackReceived   ResonanceFeedback[] @relation("FeedbackReceived")
+  messages           Message[]
+  media              Media[]
+  @@map("user")
+}
+
+// Collaboration intent
+model ProfileIntent {
+  id         Int    @id @default(autoincrement())
+  user       User   @relation(fields: [userId], references: [id])
+  userId     Int
+  intentType String
+  genre      String?
+  frequency  String?
+  vibe       String?
+  @@map("profile_intent")
+}
+
+// Connection between users
+model Connection {
+  id        Int    @id @default(autoincrement())
+  user1     User   @relation("User1Connections", fields: [user1Id], references: [id])
+  user1Id   Int
+  user2     User   @relation("User2Connections", fields: [user2Id], references: [id])
+  user2Id   Int
+  status    String
+  createdAt DateTime @default(now())
+  feedback  ResonanceFeedback[]
+  messages  Message[]
+  @@map("connection")
+}
+
+// Feedback on connection
+model ResonanceFeedback {
+  id           Int      @id @default(autoincrement())
+  connection   Connection @relation(fields: [connectionId], references: [id])
+  connectionId Int
+  fromUser     User      @relation("FeedbackGiven", fields: [fromUserId], references: [id])
+  fromUserId   Int
+  toUser       User      @relation("FeedbackReceived", fields: [toUserId], references: [id])
+  toUserId     Int
+  rating       Int
+  comments     String?
+  createdAt    DateTime @default(now())
+  @@map("resonance_feedback")
+}
+
+// Messages between users
+model Message {
+  id           Int      @id @default(autoincrement())
+  connection   Connection @relation(fields: [connectionId], references: [id])
+  connectionId Int
+  sender       User      @relation(fields: [senderId], references: [id])
+  senderId     Int
+  content      String
+  sentAt       DateTime @default(now())
+  @@map("message")
+}
+
+// Media uploads
+model Media {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  type       String
+  url        String
+  uploadedAt DateTime @default(now())
+  @@map("media")
+}
