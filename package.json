@@ -2,7 +2,10 @@
   "name": "jam-connect-root",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\""
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm start --prefix frontend",
+    "backend:prisma": "npm run prisma:generate --prefix backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
