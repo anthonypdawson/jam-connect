@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Profile from './Profile';
 import SignUpModal from './SignUpModal';
 import LoginModal from './LoginModal';
+import { apiClient, User } from './apiClient';
 
 
 function App() {
@@ -11,7 +12,7 @@ function App() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('jamconnect_user');
@@ -35,22 +36,15 @@ function App() {
       return;
     }
     setError('');
-    try {
-      const res = await fetch('http://localhost:4000/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert('Sign up successful!');
-        setShowSignUp(false);
-        setForm({ name: '', email: '', password: '' });
-      } else {
-        setError(data.error || 'Sign up failed.');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    
+    const response = await apiClient.signUp(form);
+    
+    if (response.error) {
+      setError(response.error);
+    } else {
+      alert('Sign up successful!');
+      setShowSignUp(false);
+      setForm({ name: '', email: '', password: '' });
     }
   };
 
@@ -61,23 +55,16 @@ function App() {
       return;
     }
     setLoginError('');
-    try {
-      const res = await fetch('http://localhost:4000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data.user);
-        localStorage.setItem('jamconnect_user', JSON.stringify(data.user));
-        setShowLogin(false);
-        setLoginForm({ email: '', password: '' });
-      } else {
-        setLoginError(data.error || 'Login failed.');
-      }
-    } catch (err) {
-      setLoginError('Network error. Please try again.');
+    
+    const response = await apiClient.login(loginForm);
+    
+    if (response.error) {
+      setLoginError(response.error);
+    } else if (response.data) {
+      setUser(response.data.user);
+      localStorage.setItem('jamconnect_user', JSON.stringify(response.data.user));
+      setShowLogin(false);
+      setLoginForm({ email: '', password: '' });
     }
   };
 
