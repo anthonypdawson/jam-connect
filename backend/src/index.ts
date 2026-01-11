@@ -47,7 +47,12 @@ app.post('/api/login', async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ 
+    where: { email },
+    include: {
+      instruments: true
+    }
+  });
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
@@ -55,7 +60,13 @@ app.post('/api/login', async (req, res) => {
   if (!valid) {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
-  res.status(200).json({ message: 'Login successful.', user: { id: user.id, name: user.name, email: user.email } });
+  
+  // Return user without passwordHash for security
+  const { passwordHash, ...userWithoutPassword } = user;
+  res.status(200).json({ 
+    message: 'Login successful.', 
+    user: userWithoutPassword 
+  });
 });
 
 app.listen(port, () => {

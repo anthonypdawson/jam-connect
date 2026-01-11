@@ -14,18 +14,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums for structured data
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_TO_SAY
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PROFESSIONAL
+}
+
 // User profile and authentication
 model User {
   id                 Int      @id @default(autoincrement())
   name               String
   email              String   @unique
   passwordHash       String
-  location           String?
+  
+  // Basic demographics
+  age                Int?
+  gender             Gender?
+  
+  // Location (granular for better matching)
+  city               String?
+  state              String?
+  country            String?
+  zipCode            String?
+  latitude           Float?   // For geospatial queries
+  longitude          Float?   // For geospatial queries
+  timezone           String?
+  
+  // Profile content
   bio                String?
+  avatarUrl          String?
+  website            String?
+  socialLinks        Json?    // {instagram: "...", soundcloud: "...", etc}
+  
+  // Musical info
   musicalInfluences  String?
   collaborationStyle String?
-  instruments        String?
+  genres             Json?    // ["rock", "jazz", "electronic"]
+  
+  // Platform metadata
   createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt @default(now())
+  lastActiveAt       DateTime?
+  isVerified         Boolean  @default(false)
+  preferences        Json?    // notification settings, privacy options, etc
+  
+  // Relations
+  instruments        UserInstrument[]
   intents            ProfileIntent[]
   connections1       Connection[] @relation("User1Connections")
   connections2       Connection[] @relation("User2Connections")
@@ -36,10 +79,24 @@ model User {
   @@map("user")
 }
 
+// User's instruments and experience levels
+model UserInstrument {
+  id              Int             @id @default(autoincrement())
+  userId          Int
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument      String
+  experienceLevel ExperienceLevel
+  yearsExperience Int?            // More granular than just level categories
+  createdAt       DateTime        @default(now())
+  
+  @@unique([userId, instrument])
+  @@map("user_instrument")
+}
+
 // Collaboration intent
 model ProfileIntent {
   id         Int    @id @default(autoincrement())
-  user       User   @relation(fields: [userId], references: [id])
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
   intentType String
   genre      String?
